@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<title>NutriTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--s1:#1a1a1a;--s2:#242424;--s3:#2e2e2e;
+  --b1:#2a2a2a;--b2:#3a3a3a;
+  --t1:#f0f0f0;--t2:#888;--t3:#555;
+  --green:#22c55e;--gdim:#166534;--gbg:#0a1f10;
+  --blue:#3b82f6;--amber:#f59e0b;--red:#ef4444;--purple:#a78bfa;--pink:#f472b6;
+  --r:14px;--rsm:9px;--rxs:7px;
+  --nh:64px;--hh:56px;--safe:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;font-family:'Manrope',sans-serif;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+input,select,button{font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:0}
+a{color:var(--green)}
+#app{display:flex;flex-direction:column;height:100vh;max-width:720px;margin:0 auto}
+#hdr{height:var(--hh);display:flex;align-items:center;padding:0 18px;background:var(--bg);border-bottom:1px solid var(--b1);flex-shrink:0;position:sticky;top:0;z-index:20;gap:10px}
+#hdr h1{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;background:linear-gradient(120deg,var(--green),#86efac);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;flex:1}
+.sync-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.03em;white-space:nowrap;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+.sb-ok{background:var(--gbg);color:var(--green);border:1px solid var(--gdim)}
+.sb-off{background:#1a1000;color:var(--amber);border:1px solid #6b4200}
+#body{flex:1;overflow-y:auto;padding:14px 14px calc(var(--nh) + var(--safe) + 14px)}
+#nav{height:calc(var(--nh) + var(--safe));padding-bottom:var(--safe);display:flex;background:var(--s1);border-top:1px solid var(--b1);position:fixed;bottom:0;left:0;right:0;max-width:720px;margin:0 auto;z-index:20}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;padding:8px 0;color:var(--t3);transition:color .15s;cursor:pointer;font-family:inherit}
+.nb.on{color:var(--green)}
+.nb .ni{font-size:21px}.nb .nl{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;margin-bottom:11px}
+.ctitle{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:13px}
+.dnav{display:flex;align-items:center;gap:7px;margin-bottom:13px}
+.dnav .dlbl{flex:1;text-align:center;font-size:15px;font-weight:700}
+.db{background:var(--s2);border:1px solid var(--b1);border-radius:var(--rxs);padding:6px 12px;font-size:14px;font-weight:600;color:var(--t2);cursor:pointer;transition:background .12s;border:1px solid var(--b1);font-family:inherit}
+.db:hover{background:var(--s3)}
+.rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+.rw{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--s2);border-radius:var(--rsm);padding:9px 4px}
+.rl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.rp{font-size:10px;font-weight:700}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
+.field label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select{background:var(--s2);border:1px solid var(--b1);border-radius:var(--rxs);padding:9px 11px;font-size:14px;color:var(--t1);outline:none;transition:border-color .15s;width:100%;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:var(--green)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.btn{padding:10px 16px;border-radius:var(--rsm);font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-family:inherit}
+.btn-g{background:var(--green);color:#071108}.btn-g:hover{background:#16a34a}
+.btn-gh{background:var(--s2);color:var(--t2);border:1px solid var(--b1)}.btn-gh:hover{background:var(--s3);color:var(--t1)}
+.btn-del{background:none;border:none;cursor:pointer;color:var(--t3);font-size:17px;padding:0 3px;line-height:1;transition:color .12s;font-family:inherit}.btn-del:hover{color:var(--red)}
+.brow{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.bfull{width:100%}
+.ml{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 4px}
+.fi{display:flex;align-items:center;gap:7px;padding:8px 0;border-bottom:1px solid var(--b1)}
+.fi:last-child{border-bottom:none}
+.fn{flex:1;font-size:13px;font-weight:600}
+.fps{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pill{font-size:10px;padding:2px 6px;border-radius:99px;font-weight:700}
+.pp{background:#14532d;color:#bbf7d0}.cp{background:#713f12;color:#fde68a}.fp2{background:#7f1d1d;color:#fecaca}
+.fk{font-size:12px;color:var(--t3);min-width:50px;text-align:right;font-weight:600}
+.uz{border:2px dashed var(--b2);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;position:relative;transition:all .2s}
+.uz:hover{border-color:var(--green);background:var(--gbg)}
+.uz input[type=file]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.aibox{background:var(--gbg);border:1px solid var(--gdim);border-radius:var(--rsm);padding:13px;margin:10px 0}
+.aititle{font-size:12px;font-weight:700;color:var(--green);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.aimg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:9px}
+.amc{background:rgba(255,255,255,.05);border-radius:var(--rxs);padding:7px;text-align:center}
+.amv{font-size:15px;font-weight:700}
+.aml{font-size:9px;color:var(--t3);margin-top:1px}
+.wdisp{text-align:center;padding:14px 0}
+.wbig{font-family:'Syne',sans-serif;font-size:54px;font-weight:800;line-height:1}
+.wu{font-size:15px;color:var(--t3);margin-top:4px;font-weight:600}
+.wsub{font-size:12px;color:var(--t3);margin-top:5px}
+.wi{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--b1)}
+.wi:last-child{border-bottom:none}
+.wd2{flex:1}.wd2 .wdate{font-size:13px;font-weight:600}.wd2 .wnote{font-size:11px;color:var(--t3)}
+.wv{font-size:15px;font-weight:700;font-family:'Syne',sans-serif}
+.dbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+.dup{background:#7f1d1d;color:#fca5a5}.ddn{background:#14532d;color:#86efac}.deq{background:var(--s3);color:var(--t3)}
+.hcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--rsm);padding:13px 15px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.hcard:hover{border-color:var(--green)}
+.htop{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.hdate{font-size:14px;font-weight:700}
+.hmeta{font-size:12px;color:var(--t3);display:flex;gap:9px}
+.hbars{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.hb{text-align:center;font-size:11px}
+.hbn{font-weight:600;margin-bottom:2px}
+.hbl{font-size:10px;color:var(--t3);margin-bottom:2px}
+.hbt{height:3px;background:var(--s3);border-radius:2px}
+.hbf{height:100%;border-radius:2px}
+.ggrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.gi{background:var(--s2);border-radius:var(--rsm);padding:10px 11px}
+.gil{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.gi input{background:var(--s3);border:1px solid var(--b2);border-radius:var(--rxs);padding:7px 10px;font-size:14px;font-weight:700;color:var(--t1);width:100%;outline:none;font-family:inherit}
+.wgstat{background:var(--gbg);border:1px solid var(--gdim);border-radius:var(--rsm);padding:11px;margin-bottom:10px;font-size:13px;line-height:1.6}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);z-index:100;display:flex;align-items:center;justify-content:center;padding:18px}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);padding:22px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto}
+.modal h2{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px}
+.modal p{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:10px}
+.step{display:flex;gap:11px;margin-bottom:11px;padding:12px;background:var(--s2);border-radius:var(--rsm)}
+.step-n{width:24px;height:24px;border-radius:50%;background:var(--green);color:#071108;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-b{font-size:13px;color:var(--t2);line-height:1.6}
+.step-b strong{color:var(--t1)}
+.code{background:var(--s3);border-radius:var(--rxs);padding:4px 8px;font-family:monospace;font-size:12px;color:var(--amber);display:inline-block;margin:2px 0}
+.empty{text-align:center;padding:26px 0;color:var(--t3);font-size:13px;line-height:1.7}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp{width:14px;height:14px;border:2px solid var(--gdim);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+#toast{position:fixed;bottom:calc(var(--nh) + var(--safe) + 12px);left:50%;transform:translateX(-50%) translateY(12px);background:var(--t1);color:var(--bg);padding:9px 20px;border-radius:99px;font-size:13px;font-weight:700;opacity:0;transition:all .22s;pointer-events:none;z-index:99;white-space:nowrap;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.cwrap{position:relative;width:100%}
+.info-box{background:var(--s2);border-radius:var(--rsm);padding:12px;font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:10px}
+.info-box strong{color:var(--t1)}
+@media(min-width:640px){#body{padding:18px 22px calc(var(--nh) + 22px)}.g3{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- SYNC SETUP MODAL -->
+<div class="modal-bg" id="sync-modal" style="display:none">
+  <div class="modal">
+    <div style="font-size:30px;margin-bottom:8px">☁️</div>
+    <h2>Google Drive Auto-Sync</h2>
+    <p>Your data auto-saves to <span class="code">nutritrack-data.json</span> in your Drive and loads on every device you sign in from. One-time setup:</p>
+
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-b">Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → create a new project named <strong>NutriTrack</strong></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-b"><strong>APIs &amp; Services → Library</strong> → search <strong>Google Drive API</strong> → Enable it</div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-b"><strong>APIs &amp; Services → OAuth consent screen</strong> → External → fill App name → add your Gmail as a test user → Save</div>
+    </div>
+    <div class="step">
+      <div class="step-n">4</div>
+      <div class="step-b"><strong>Credentials → Create Credentials → OAuth Client ID</strong> → type: <strong>Web application</strong><br/>
+      Add your app's URL under <strong>Authorized JavaScript origins</strong>.<br/>
+      ⚠ <strong>file://</strong> won't work — host the HTML file for free on <a href="https://tiiny.host" target="_blank">tiiny.host</a> or <a href="https://pages.github.com" target="_blank">GitHub Pages</a>, then add that URL.<br/>
+      Copy the <strong>Client ID</strong>.</div>
+    </div>
+    <div class="step">
+      <div class="step-n">5</div>
+      <div class="step-b">Paste your Client ID below and sign in. That's it — sync is automatic from then on.</div>
+    </div>
+
+    <div class="field"><label>Your OAuth Client ID</label><input id="cid-in" type="text" placeholder="…apps.googleusercontent.com"/></div>
+    <div class="brow">
+      <button class="btn btn-g" style="flex:1" onclick="saveAndSignIn()">Save &amp; Sign in with Google</button>
+      <button class="btn btn-gh" onclick="closeSyncModal()">Skip for now</button>
+    </div>
+    <p style="margin-top:11px;font-size:11px;color:var(--t3)">NutriTrack only accesses files it creates — it cannot read any other files in your Drive.</p>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-bg" id="api-modal" style="display:none">
+  <div class="modal">
+    <div style="font-size:30px;margin-bottom:8px">🔑</div>
+    <h2>Anthropic API Key</h2>
+    <p>The AI food scanner uses Claude to identify foods in photos. Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+    <div class="field"><label>API Key</label><input id="api-in" type="password" placeholder="sk-ant-…"/></div>
+    <div class="brow">
+      <button class="btn btn-g" style="flex:1" onclick="saveApiKey()">Save key</button>
+      <button class="btn btn-gh" onclick="closeApiModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="hdr">
+    <h1>🥗 NutriTrack</h1>
+    <button class="sync-badge sb-off" id="sync-badge" onclick="openSyncModal()">⚡ Enable Sync</button>
+  </div>
+  <div id="body">
+
+    <!-- LOG -->
+    <div id="p-log" class="panel on">
+      <div class="dnav">
+        <button class="db" onclick="sd(-1)">‹</button>
+        <div class="dlbl" id="log-dlbl"></div>
+        <button class="db" onclick="sd(1)">›</button>
+        <button class="db" id="today-btn" onclick="goToday()" style="display:none">Today</button>
+      </div>
+      <div class="rgrid" id="rings"></div>
+      <div class="card">
+        <div class="ctitle">Add food manually</div>
+        <div class="g2">
+          <div class="field"><label>Food name</label><input id="fn" type="text" placeholder="e.g. Grilled chicken"/></div>
+          <div class="field"><label>Meal</label><select id="fm"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></div>
+        </div>
+        <div class="g3">
+          <div class="field"><label>Calories</label><input id="fc" type="number" inputmode="decimal" placeholder="0"/></div>
+          <div class="field"><label>Protein g</label><input id="fp" type="number" inputmode="decimal" placeholder="0"/></div>
+          <div class="field"><label>Carbs g</label><input id="fca" type="number" inputmode="decimal" placeholder="0"/></div>
+        </div>
+        <div class="g3">
+          <div class="field"><label>Fat g</label><input id="ff" type="number" inputmode="decimal" placeholder="0"/></div>
+          <div class="field"><label>Fiber g</label><input id="ffi" type="number" inputmode="decimal" placeholder="0"/></div>
+          <div class="field"><label>Sugar g</label><input id="fs" type="number" inputmode="decimal" placeholder="0"/></div>
+        </div>
+        <button class="btn btn-g bfull" onclick="addEntry()">Add entry</button>
+      </div>
+      <div class="card">
+        <div class="ctitle">Food log</div>
+        <div id="log-body"></div>
+      </div>
+    </div>
+
+    <!-- SCAN -->
+    <div id="p-scan" class="panel">
+      <div class="card">
+        <div class="ctitle">AI food scanner</div>
+        <p style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.6">Take or upload a photo — AI identifies the foods and estimates nutrition automatically.</p>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-gh" style="font-size:12px;padding:6px 12px" onclick="openApiModal()">🔑 Set API key</button>
+        </div>
+        <div id="uz" class="uz">
+          <input type="file" accept="image/*" capture="environment" id="photo-in" onchange="handlePhoto(event)"/>
+          <div style="font-size:38px;margin-bottom:8px">📸</div>
+          <div style="font-size:14px;color:var(--t2)">Tap to take a photo<br/>or choose from gallery</div>
+        </div>
+        <img id="prev" style="display:none;width:100%;max-height:230px;object-fit:cover;border-radius:var(--rsm);margin:11px 0"/>
+        <div id="ai-res"></div>
+        <div id="sf" style="display:none">
+          <div class="ctitle" style="margin-top:13px">Review &amp; add to log</div>
+          <div class="g2">
+            <div class="field"><label>Name</label><input id="sf-n" type="text"/></div>
+            <div class="field"><label>Meal</label><select id="sf-m"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></div>
+          </div>
+          <div class="g3">
+            <div class="field"><label>Calories</label><input id="sf-c" type="number" inputmode="decimal"/></div>
+            <div class="field"><label>Protein g</label><input id="sf-p" type="number" inputmode="decimal"/></div>
+            <div class="field"><label>Carbs g</label><input id="sf-ca" type="number" inputmode="decimal"/></div>
+          </div>
+          <div class="g3">
+            <div class="field"><label>Fat g</label><input id="sf-f" type="number" inputmode="decimal"/></div>
+            <div class="field"><label>Fiber g</label><input id="sf-fi" type="number" inputmode="decimal"/></div>
+            <div class="field"><label>Sugar g</label><input id="sf-s" type="number" inputmode="decimal"/></div>
+          </div>
+          <div class="brow">
+            <button class="btn btn-g" style="flex:1" onclick="addFromScan()">Add to log</button>
+            <button class="btn btn-gh" onclick="resetScan()">Rescan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEIGHT -->
+    <div id="p-weight" class="panel">
+      <div class="card">
+        <div class="ctitle">Log weight</div>
+        <div id="wdisp" class="wdisp" style="display:none"></div>
+        <div class="g2">
+          <div class="field"><label>Weight (lbs)</label><input id="wv" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 165.5" oninput="prevW(this.value)"/></div>
+          <div class="field"><label>Date</label><input id="wd" type="date"/></div>
+        </div>
+        <div class="field"><label>Note (optional)</label><input id="wn" type="text" placeholder="e.g. Morning, before breakfast"/></div>
+        <button class="btn btn-g bfull" onclick="logW()">Log weight</button>
+      </div>
+      <div class="card">
+        <div class="ctitle">Trend (last 14 entries)</div>
+        <div class="cwrap" style="height:170px" id="wchart-wrap"><canvas id="wc"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">History</div>
+        <div id="wlog"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="p-history" class="panel">
+      <div style="font-size:17px;font-weight:800;font-family:'Syne',sans-serif;margin-bottom:13px">Nutrition history</div>
+      <div id="hist"></div>
+    </div>
+
+    <!-- GOALS -->
+    <div id="p-goals" class="panel">
+      <div class="card">
+        <div class="ctitle">Daily targets</div>
+        <div class="ggrid" id="gi"></div>
+        <button class="btn btn-g bfull" onclick="saveGoals()">Save goals</button>
+      </div>
+      <div class="card">
+        <div class="ctitle">Weight goal</div>
+        <div class="g2">
+          <div class="field"><label>Target (lbs)</label><input id="wgt" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 160"/></div>
+          <div class="field"><label>Goal type</label><select id="wgtype"><option>Lose weight</option><option>Maintain</option><option>Gain weight</option></select></div>
+        </div>
+        <div id="wgstat"></div>
+        <button class="btn btn-g bfull" onclick="saveWGoal()">Save weight goal</button>
+      </div>
+      <div class="card">
+        <div class="ctitle">Google Drive sync</div>
+        <div id="sync-panel-body"></div>
+        <button class="btn btn-gh bfull" id="sync-panel-btn" onclick="openSyncModal()">Configure sync</button>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+  <nav id="nav">
+    <button class="nb on" onclick="go('log',this)"><span class="ni">📋</span><span class="nl">Log</span></button>
+    <button class="nb" onclick="go('scan',this)"><span class="ni">📷</span><span class="nl">Scan</span></button>
+    <button class="nb" onclick="go('weight',this)"><span class="ni">⚖️</span><span class="nl">Weight</span></button>
+    <button class="nb" onclick="go('history',this)"><span class="ni">📅</span><span class="nl">History</span></button>
+    <button class="nb" onclick="go('goals',this)"><span class="ni">🎯</span><span class="nl">Goals</span></button>
+  </nav>
+</div>
+<div id="toast"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const LS_KEY='nt_v3';
+const CID_KEY='nt_cid';
+const AKEY='nt_akey';
+const FILE_NAME='nutritrack-data.json';
+let db={entries:{},weights:[],goals:{cal:2000,pro:150,carb:200,fat:65,fib:25,sug:50},wgoal:{target:'',type:'Lose weight'}};
+let curDate=todayStr();
+let wCI=null;
+let gToken=null,driveFileId=null,syncTimer=null;
+const GMETA=[{k:'cal',l:'Calories',u:'kcal'},{k:'pro',l:'Protein',u:'g'},{k:'carb',l:'Carbs',u:'g'},{k:'fat',l:'Fat',u:'g'},{k:'fib',l:'Fiber',u:'g'},{k:'sug',l:'Sugar',u:'g'}];
+const MEALS=['Breakfast','Lunch','Dinner','Snack'];
+const RC={cal:'#3b82f6',pro:'#22c55e',carb:'#f59e0b',fat:'#ef4444'};
+
+// ── Persistence ───────────────────────────────────────────────────────────────
+function loadLocal(){try{const s=localStorage.getItem(LS_KEY);if(s)db=JSON.parse(s);}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(db));}catch(e){}}
+function persist(){saveLocal();scheduleDriveSync();}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function fmtD(d){const[y,m,dy]=d.split('-');return new Date(y,m-1,dy).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
+function offD(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10);}
+function pct(v,g){return g?Math.min(100,Math.round(v/g*100)):0;}
+function sfield(arr,k){return arr.reduce((a,x)=>a+(+x[k]||0),0);}
+function gt(date){const e=db.entries[date]||[];return{cal:sfield(e,'cal'),pro:sfield(e,'pro'),carb:sfield(e,'carb'),fat:sfield(e,'fat'),fib:sfield(e,'fib'),sug:sfield(e,'sug')};}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let _tt;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500);}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function go(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');btn.classList.add('on');
+  if(id==='weight')renderW();
+  if(id==='history')renderHist();
+  if(id==='goals')renderGoals();
+}
+
+// ── LOG ───────────────────────────────────────────────────────────────────────
+function renderLog(){
+  const today=todayStr();
+  document.getElementById('log-dlbl').textContent=fmtD(curDate)+(curDate===today?' · Today':'');
+  document.getElementById('today-btn').style.display=curDate!==today?'':'none';
+  const t=gt(curDate),g=db.goals;
+  const rd=[{l:'Cal',v:t.cal,g:g.cal,c:RC.cal},{l:'Pro',v:t.pro,g:g.pro,c:RC.pro},{l:'Carb',v:t.carb,g:g.carb,c:RC.carb},{l:'Fat',v:t.fat,g:g.fat,c:RC.fat}];
+  document.getElementById('rings').innerHTML=rd.map(r=>{
+    const p=pct(r.v,r.g),R=23,C=2*Math.PI*R,da=p/100*C;
+    return`<div class="rw"><svg width="58" height="58" viewBox="0 0 58 58">
+      <circle cx="29" cy="29" r="${R}" fill="none" stroke="#222" stroke-width="6"/>
+      <circle cx="29" cy="29" r="${R}" fill="none" stroke="${r.c}" stroke-width="6"
+        stroke-dasharray="${da} ${C}" stroke-linecap="round" transform="rotate(-90 29 29)"/>
+      <text x="29" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="${r.c}">${r.v}</text>
+      <text x="29" y="38" text-anchor="middle" font-size="8" fill="#555">/${r.g}</text>
+    </svg><div class="rl">${r.l}</div><div class="rp" style="color:${r.c}">${p}%</div></div>`;
+  }).join('');
+  const entries=db.entries[curDate]||[];
+  if(!entries.length){document.getElementById('log-body').innerHTML='<div class="empty">No entries yet — add a meal or scan a photo 📷</div>';return;}
+  let h='';
+  MEALS.forEach(meal=>{
+    const me=entries.filter(e=>e.meal===meal);if(!me.length)return;
+    h+=`<div class="ml">${meal}</div>`;
+    me.forEach(e=>{h+=`<div class="fi"><div class="fn">${e.name}</div><div class="fps">
+      <span class="pill pp">${e.pro}P</span><span class="pill cp">${e.carb}C</span><span class="pill fp2">${e.fat}F</span>
+      <span class="fk">${e.cal}kcal</span><button class="btn-del" onclick="delE('${curDate}',${e.id})">×</button>
+    </div></div>`;});
+  });
+  document.getElementById('log-body').innerHTML=h;
+}
+
+function sd(n){curDate=offD(curDate,n);renderLog();}
+function goToday(){curDate=todayStr();renderLog();}
+
+function addEntry(){
+  const name=document.getElementById('fn').value.trim();
+  if(!name){toast('Enter a food name');return;}
+  const e={id:Date.now(),name,meal:document.getElementById('fm').value,
+    cal:+document.getElementById('fc').value||0,pro:+document.getElementById('fp').value||0,
+    carb:+document.getElementById('fca').value||0,fat:+document.getElementById('ff').value||0,
+    fib:+document.getElementById('ffi').value||0,sug:+document.getElementById('fs').value||0};
+  if(!db.entries[curDate])db.entries[curDate]=[];
+  db.entries[curDate].push(e);persist();
+  ['fn','fc','fp','fca','ff','ffi','fs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fm').value='Breakfast';
+  renderLog();toast('Entry added!');
+}
+function delE(date,id){
+  db.entries[date]=(db.entries[date]||[]).filter(e=>e.id!==id);
+  persist();renderLog();
+}
+
+// ── SCAN ─────────────────────────────────────────────────────────────────────
+function handlePhoto(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    const durl=e.target.result;
+    document.getElementById('uz').style.display='none';
+    const pi=document.getElementById('prev');pi.src=durl;pi.style.display='block';
+    await analyzePhoto(durl);
+  };r.readAsDataURL(file);
+}
+async function analyzePhoto(durl){
+  const akey=localStorage.getItem(AKEY)||'';
+  const res=document.getElementById('ai-res');
+  res.innerHTML=`<div class="aibox"><div class="aititle"><span class="sp"></span> Analyzing your meal…</div><div style="font-size:13px;color:var(--t2)">Identifying foods and estimating nutrition…</div></div>`;
+  if(!akey){
+    res.innerHTML=`<div class="aibox" style="border-color:var(--amber);background:#1a1000"><div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:5px">⚠ API key not set</div><div style="font-size:13px;color:var(--t2)">Tap "Set API key" above to enable AI scanning. Fill values manually below.</div></div>`;
+    document.getElementById('sf').style.display='block';return;
+  }
+  const b64=durl.split(',')[1],mt=durl.split(';')[0].split(':')[1];
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':akey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mt,data:b64}},
+          {type:'text',text:`Analyze this food photo. Identify all visible foods and estimate total nutrition for the whole meal shown.
+Respond ONLY with valid JSON, no markdown:
+{"name":"short meal name","foods":["item1","item2"],"cal":number,"pro":number,"carb":number,"fat":number,"fib":number,"sug":number,"note":"brief note about estimates"}
+All macro values must be integers.`}
+        ]}]})
+    });
+    const data=await r.json();
+    const txt=data.content?.find(c=>c.type==='text')?.text||'{}';
+    const j=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    res.innerHTML=`<div class="aibox"><div class="aititle">✓ Meal identified</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:2px">${j.name||'Meal'}</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:8px">${(j.foods||[]).join(' · ')}</div>
+      <div class="aimg">${[['Calories',j.cal,'kcal','#3b82f6'],['Protein',j.pro,'g','#22c55e'],['Carbs',j.carb,'g','#f59e0b'],['Fat',j.fat,'g','#ef4444'],['Fiber',j.fib,'g','#a78bfa'],['Sugar',j.sug,'g','#f472b6']].map(([l,v,u,c])=>`<div class="amc"><div class="amv" style="color:${c}">${v}</div><div class="aml">${l} (${u})</div></div>`).join('')}</div>
+      ${j.note?`<div style="font-size:11px;color:var(--t3);margin-top:7px;font-style:italic">${j.note}</div>`:''}</div>`;
+    document.getElementById('sf-n').value=j.name||'';
+    document.getElementById('sf-c').value=j.cal||0;document.getElementById('sf-p').value=j.pro||0;
+    document.getElementById('sf-ca').value=j.carb||0;document.getElementById('sf-f').value=j.fat||0;
+    document.getElementById('sf-fi').value=j.fib||0;document.getElementById('sf-s').value=j.sug||0;
+    document.getElementById('sf').style.display='block';
+  }catch(err){
+    res.innerHTML=`<div class="aibox" style="border-color:var(--red);background:#1a0000"><div style="font-size:13px;font-weight:700;color:var(--red)">Analysis failed</div><div style="font-size:12px;color:var(--t2);margin-top:4px">${err.message}</div></div>`;
+    document.getElementById('sf').style.display='block';
+  }
+}
+function addFromScan(){
+  const name=document.getElementById('sf-n').value.trim()||'Scanned meal';
+  const e={id:Date.now(),name,meal:document.getElementById('sf-m').value,
+    cal:+document.getElementById('sf-c').value||0,pro:+document.getElementById('sf-p').value||0,
+    carb:+document.getElementById('sf-ca').value||0,fat:+document.getElementById('sf-f').value||0,
+    fib:+document.getElementById('sf-fi').value||0,sug:+document.getElementById('sf-s').value||0};
+  if(!db.entries[curDate])db.entries[curDate]=[];
+  db.entries[curDate].push(e);persist();resetScan();
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-log').classList.add('on');
+  document.querySelector('.nb').classList.add('on');
+  renderLog();toast('Meal added from scan!');
+}
+function resetScan(){
+  document.getElementById('prev').style.display='none';
+  document.getElementById('uz').style.display='block';
+  document.getElementById('photo-in').value='';
+  document.getElementById('ai-res').innerHTML='';
+  document.getElementById('sf').style.display='none';
+}
+
+// ── WEIGHT ────────────────────────────────────────────────────────────────────
+function renderW(){
+  const latest=db.weights[db.weights.length-1];
+  const el=document.getElementById('wdisp');
+  if(latest){el.style.display='block';el.innerHTML=`<div class="wbig" style="color:var(--green)">${latest.val}</div><div class="wu">lbs</div><div class="wsub">Last logged ${fmtD(latest.date)}</div>`;}
+  else el.style.display='none';
+
+  if(wCI){wCI.destroy();wCI=null;}
+  const data=db.weights.slice(-14);
+  const wrap=document.getElementById('wchart-wrap');
+  if(data.length>=2){
+    wrap.innerHTML='<canvas id="wc"></canvas>';
+    wCI=new Chart(document.getElementById('wc'),{type:'line',
+      data:{labels:data.map(w=>w.date.slice(5)),datasets:[{label:'Weight',data:data.map(w=>w.val),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#22c55e',fill:true,tension:.35}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:'#555',font:{size:10}},grid:{color:'#1e1e1e'}},y:{ticks:{color:'#555',font:{size:10},callback:v=>v+' lb'},grid:{color:'#1e1e1e'}}}}
+    });
+  }else{
+    wrap.innerHTML='<div class="empty" style="height:170px;display:flex;align-items:center;justify-content:center">Log at least 2 entries to see the trend</div>';
+  }
+
+  const recent=[...db.weights].reverse().slice(0,20);
+  document.getElementById('wlog').innerHTML=!recent.length?'<div class="empty">No weight entries yet</div>'
+    :recent.map((w,i)=>{
+      const pr=recent[i+1];let badge='';
+      if(pr){const d=(w.val-pr.val).toFixed(1);const cls=d>0?'dup':d<0?'ddn':'deq';badge=`<span class="dbadge ${cls}">${d>0?'+':''}${d}</span>`;}
+      return`<div class="wi"><div class="wd2"><div class="wdate">${fmtD(w.date)}</div>${w.note?`<div class="wnote">${w.note}</div>`:''}</div>${badge}<div class="wv" style="color:var(--green)">${w.val} lbs</div><button class="btn-del" onclick="delW('${w.date}')">×</button></div>`;
+    }).join('');
+}
+function prevW(v){
+  const el=document.getElementById('wdisp');
+  if(!v){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML=`<div class="wbig" style="color:var(--amber)">${parseFloat(v).toFixed(1)}</div><div class="wu">lbs</div><div class="wsub">Ready to log</div>`;
+}
+function logW(){
+  const v=parseFloat(document.getElementById('wv').value);
+  if(!v||v<50||v>700){toast('Enter a valid weight');return;}
+  const date=document.getElementById('wd').value||todayStr();
+  const note=document.getElementById('wn').value.trim();
+  db.weights=db.weights.filter(w=>w.date!==date);
+  db.weights.push({date,val:v,note});
+  db.weights.sort((a,b)=>a.date.localeCompare(b.date));
+  persist();renderW();
+  document.getElementById('wv').value='';document.getElementById('wn').value='';
+  toast('Weight logged!');
+}
+function delW(date){db.weights=db.weights.filter(w=>w.date!==date);persist();renderW();}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+function renderHist(){
+  const dates=Object.keys(db.entries).filter(d=>(db.entries[d]||[]).length>0).sort().reverse().slice(0,60);
+  if(!dates.length){document.getElementById('hist').innerHTML='<div class="empty">No history yet — start logging!</div>';return;}
+  const g=db.goals;
+  document.getElementById('hist').innerHTML=dates.map(d=>{
+    const t=gt(d),w=db.weights.find(x=>x.date===d);
+    const bars=[['Cal',t.cal,g.cal,'#3b82f6'],['Pro',t.pro,g.pro,'#22c55e'],['Carb',t.carb,g.carb,'#f59e0b'],['Fat',t.fat,g.fat,'#ef4444']];
+    return`<div class="hcard" onclick="jumpTo('${d}')">
+      <div class="htop"><span class="hdate">${fmtD(d)}</span>
+        <div class="hmeta">${w?`<span>⚖️ ${w.val} lbs</span>`:''}<span>${(db.entries[d]||[]).length} entries</span></div>
+      </div>
+      <div class="hbars">${bars.map(([l,v,gl,c])=>`<div class="hb">
+        <div class="hbn" style="color:${c}">${v}<span style="color:var(--t3);font-size:9px">/${gl}</span></div>
+        <div class="hbl">${l}</div>
+        <div class="hbt"><div class="hbf" style="width:${pct(v,gl)}%;background:${c}"></div></div>
+      </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function jumpTo(d){
+  curDate=d;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-log').classList.add('on');
+  document.querySelector('.nb').classList.add('on');
+  renderLog();
+}
+
+// ── GOALS ─────────────────────────────────────────────────────────────────────
+function renderGoals(){
+  document.getElementById('gi').innerHTML=GMETA.map(m=>`<div class="gi"><div class="gil">${m.l} (${m.u})</div><input type="number" inputmode="decimal" value="${db.goals[m.k]||0}" id="gi-${m.k}"/></div>`).join('');
+  document.getElementById('wgt').value=db.wgoal.target||'';
+  document.getElementById('wgtype').value=db.wgoal.type||'Lose weight';
+  renderWGStat();renderSyncPanel();
+}
+function saveGoals(){
+  GMETA.forEach(m=>{db.goals[m.k]=+document.getElementById('gi-'+m.k).value||0;});
+  persist();renderLog();toast('Goals saved!');
+}
+function saveWGoal(){
+  db.wgoal={target:document.getElementById('wgt').value,type:document.getElementById('wgtype').value};
+  persist();renderWGStat();toast('Weight goal saved!');
+}
+function renderWGStat(){
+  const el=document.getElementById('wgstat');if(!el)return;
+  const latest=db.weights[db.weights.length-1],target=+db.wgoal.target;
+  if(!latest||!target){el.innerHTML='';return;}
+  const diff=(latest.val-target).toFixed(1);
+  el.innerHTML=`<div class="wgstat"><strong>Current:</strong> ${latest.val} lbs &nbsp;·&nbsp; <strong>Target:</strong> ${target} lbs<br/><span style="color:var(--t2)">${diff<0?'You are '+Math.abs(diff)+' lbs below target.':Math.abs(diff)+' lbs to go.'}</span></div>`;
+}
+
+// ── GOOGLE DRIVE ──────────────────────────────────────────────────────────────
+function setCID(id){localStorage.setItem(CID_KEY,id);}
+function getCID(){return localStorage.getItem(CID_KEY)||'';}
+
+function setSyncBadge(state){
+  const el=document.getElementById('sync-badge');
+  el.className='sync-badge';
+  if(state==='ok'){el.classList.add('sb-ok');el.textContent='☁ Synced';}
+  else if(state==='syncing'){el.classList.add('sb-ok');el.innerHTML='<span class="sp" style="width:10px;height:10px;border-width:1.5px"></span> Syncing…';}
+  else if(state==='err'){el.classList.add('sb-off');el.textContent='⚠ Sync error — tap';}
+  else{el.classList.add('sb-off');el.textContent='⚡ Enable Sync';}
+}
+
+function scheduleDriveSync(){
+  if(!gToken)return;
+  clearTimeout(syncTimer);
+  setSyncBadge('syncing');
+  syncTimer=setTimeout(doSync,1500);
+}
+
+async function doSync(){
+  try{
+    if(!driveFileId)await findOrCreate();
+    await uploadFile();
+    setSyncBadge('ok');
+  }catch(e){
+    console.error('Sync error',e);
+    setSyncBadge('err');
+    if(e.status===401){gToken=null;setSyncBadge('off');}
+  }
+}
+
+async function findOrCreate(){
+  const q=encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+  const r=await gdFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`);
+  if(r.files&&r.files.length){
+    driveFileId=r.files[0].id;
+    await pullFromDrive();
+  }else{
+    const res=await gUpload(null,{name:FILE_NAME,mimeType:'application/json'},JSON.stringify(db));
+    driveFileId=res.id;
+  }
+}
+
+async function pullFromDrive(){
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+gToken}});
+  if(!r.ok)return;
+  try{
+    const remote=await r.json();
+    // Smart merge: union of all entries and weights, prefer newest
+    const merged={...db};
+    // Entries: remote wins for dates not in local
+    merged.entries={...remote.entries,...db.entries};
+    // Weights: dedupe by date
+    const wm={};
+    (remote.weights||[]).forEach(w=>wm[w.date]=w);
+    (db.weights||[]).forEach(w=>wm[w.date]=w);
+    merged.weights=Object.values(wm).sort((a,b)=>a.date.localeCompare(b.date));
+    db=merged;saveLocal();renderLog();
+  }catch(e){console.warn('Pull failed',e);}
+}
+
+async function uploadFile(){
+  await gUpload(driveFileId,{mimeType:'application/json'},JSON.stringify(db));
+}
+
+async function gdFetch(url,opts={}){
+  const r=await fetch(url,{...opts,headers:{Authorization:'Bearer '+gToken,...(opts.headers||{})}});
+  if(!r.ok){const err=new Error('Drive error '+r.status);err.status=r.status;throw err;}
+  return r.json();
+}
+
+async function gUpload(fileId,meta,body){
+  const boundary='nt_mp';
+  const mp=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${boundary}--`;
+  const url=fileId?`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`:`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+  const r=await fetch(url,{method:fileId?'PATCH':'POST',headers:{Authorization:'Bearer '+gToken,'Content-Type':`multipart/related; boundary=${boundary}`},body:mp});
+  if(!r.ok){const err=new Error('Upload error '+r.status);err.status=r.status;throw err;}
+  return r.json();
+}
+
+function startGoogleAuth(clientId){
+  if(!clientId||!window.google){toast('Google not ready — try again in a moment');return;}
+  google.accounts.oauth2.initTokenClient({
+    client_id:clientId,
+    scope:'https://www.googleapis.com/auth/drive.file',
+    callback:(resp)=>{
+      if(resp.access_token){
+        gToken=resp.access_token;
+        setSyncBadge('syncing');
+        findOrCreate().then(()=>uploadFile()).then(()=>setSyncBadge('ok')).catch(e=>{console.error(e);setSyncBadge('err');});
+        toast('☁ Google Drive connected!');
+        renderSyncPanel();
+        closeSyncModal();
+        setTimeout(()=>startGoogleAuth(clientId),(resp.expires_in-120)*1000);
+      }
+    }
+  }).requestAccessToken();
+}
+
+function saveAndSignIn(){
+  const id=document.getElementById('cid-in').value.trim();
+  if(!id){toast('Paste your Client ID first');return;}
+  setCID(id);startGoogleAuth(id);
+}
+
+function renderSyncPanel(){
+  const cid=getCID();
+  const body=document.getElementById('sync-panel-body');
+  const btn=document.getElementById('sync-panel-btn');
+  if(!body)return;
+  if(!cid){
+    body.innerHTML=`<div class="info-box">Not configured. Your data only lives on this device. Enable sync to automatically share between Android and Windows.</div>`;
+    btn.textContent='Set up Google Drive sync';btn.onclick=openSyncModal;
+  }else if(gToken){
+    body.innerHTML=`<div class="info-box" style="border:1px solid var(--gdim);background:var(--gbg)"><strong style="color:var(--green)">☁ Syncing automatically</strong><br/>Data file: <span style="font-family:monospace;color:var(--t1)">nutritrack-data.json</span><br/>Changes sync within ~2 seconds of any update.</div>`;
+    btn.textContent='Reconnect / Switch account';btn.onclick=()=>startGoogleAuth(getCID());
+  }else{
+    body.innerHTML=`<div class="info-box" style="border:1px solid #6b4200;background:#1a1000;color:var(--amber)">Client ID saved. Sign in with Google to activate sync.</div>`;
+    btn.textContent='Sign in with Google';btn.onclick=()=>startGoogleAuth(getCID());
+  }
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+function openSyncModal(){document.getElementById('sync-modal').style.display='flex';const c=getCID();if(c)document.getElementById('cid-in').value=c;}
+function closeSyncModal(){document.getElementById('sync-modal').style.display='none';}
+function openApiModal(){document.getElementById('api-modal').style.display='flex';const k=localStorage.getItem(AKEY)||'';document.getElementById('api-in').value=k;}
+function closeApiModal(){document.getElementById('api-modal').style.display='none';}
+function saveApiKey(){const k=document.getElementById('api-in').value.trim();if(k)localStorage.setItem(AKEY,k);closeApiModal();toast('API key saved!');}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadLocal();
+document.getElementById('wd').value=todayStr();
+renderLog();
+
+// Auto-reconnect Drive on load
+window.addEventListener('load',()=>{
+  const cid=getCID();if(!cid)return;
+  const try_=()=>{if(window.google)startGoogleAuth(cid);else setTimeout(try_,600);};
+  setTimeout(try_,1000);
+});
+</script>
+</body>
+</html>
